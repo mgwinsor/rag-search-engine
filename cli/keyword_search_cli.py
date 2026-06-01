@@ -33,15 +33,22 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            matched_movies = search_movies(args.query)
-            for i, movie in enumerate(matched_movies, 1):
-                print(f"{i}. {movie['title']}")
+            try:
+                indexer.load()
+                tokens = text_processor.preprocess(args.query)
+                print(tokens)
+                results = []
+                for token in tokens:
+                    results.extend(indexer.get_documents(token))
+                for id in results[0:5]:
+                    print(f"{id}: {movies[id]['title']}")
+            except FileExistsError:
+                print("Error loading files...")
         case "build":
             indexer.build(movies)
             indexer.save()
-            search_token = text_processor.preprocess("merida")[0]
-            search_result = indexer.get_documents(search_token)
-            print(search_result[0])
+            docs = indexer.get_documents("merida")
+            print(f"{docs[0]}")
         case _:
             parser.print_help()
 

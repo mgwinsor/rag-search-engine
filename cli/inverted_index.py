@@ -16,6 +16,7 @@ class InvertedIndex:
         self.index: dict[Token, set[DocumentID]] = defaultdict(set)
         self.docmap: dict[int, dict] = {}
         self.tokenizer = tokenizer
+        self._cache_dir = Path("cache")
 
     def __add_document(self, doc_id: DocumentID, text: str) -> None:
         tokens = self.tokenizer.preprocess(text)
@@ -30,9 +31,15 @@ class InvertedIndex:
             self.__add_document(m["id"], f"{m['title']} {m['description']}")
 
     def save(self) -> None:
-        cache_dir = Path("cache")
-        cache_dir.mkdir(parents=True, exist_ok=True)
+        self._cache_dir.mkdir(parents=True, exist_ok=True)
 
         for filename, obj in [("index.pkl", self.index), ("docmap.pkl", self.docmap)]:
-            with open(cache_dir.joinpath(filename), "wb") as f:
+            with open(self._cache_dir.joinpath(filename), "wb") as f:
                 pickle.dump(obj, f)
+
+    def load(self) -> None:
+        with open(self._cache_dir.joinpath("index.pkl"), "rb") as f:
+            self.index = pickle.load(f)
+
+        with open(self._cache_dir.joinpath("docmap.pkl"), "rb") as f:
+            self.docmap = pickle.load(f)
