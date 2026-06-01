@@ -32,20 +32,27 @@ def main() -> None:
             print(f"Searching for: {args.query}")
             try:
                 indexer.load()
-                tokens = text_processor.preprocess(args.query)
-                print(tokens)
+                query_tokens = text_processor.preprocess(args.query)
                 results = []
-                for token in tokens:
-                    results.extend(indexer.get_documents(token))
-                for id in results[0:5]:
-                    print(f"{id}: {movies[id]['title']}")
-            except FileExistsError:
+                for token in query_tokens:
+                    if len(results) >= 5:
+                        break
+
+                    doc_ids = indexer.get_documents(token)
+                    for id in doc_ids:
+                        if not id in results:
+                            results.append(id)
+
+                        if len(results) >= 5:
+                            break
+
+                for id in results:
+                    print(f"{id}: {indexer.docmap[id]['title']}")
+            except FileNotFoundError:
                 print("Error loading files...")
         case "build":
             indexer.build(movies)
             indexer.save()
-            docs = indexer.get_documents("merida")
-            print(f"{docs[0]}")
         case _:
             parser.print_help()
 

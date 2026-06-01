@@ -1,7 +1,8 @@
-from pathlib import Path
 import pickle
+from pathlib import Path
 
 from nltk import defaultdict
+
 from cli.text_processor import TextProcessor
 
 type Token = str
@@ -14,7 +15,7 @@ class InvertedIndex:
         tokenizer: TextProcessor,
     ) -> None:
         self.index: dict[Token, set[DocumentID]] = defaultdict(set)
-        self.docmap: dict[int, dict] = {}
+        self.docmap: dict[DocumentID, dict] = {}
         self.tokenizer = tokenizer
         self._cache_dir = Path("cache")
 
@@ -29,6 +30,7 @@ class InvertedIndex:
     def build(self, movies: list[dict]) -> None:
         for m in movies:
             self.__add_document(m["id"], f"{m['title']} {m['description']}")
+            self.docmap[m["id"]] = m
 
     def save(self) -> None:
         self._cache_dir.mkdir(parents=True, exist_ok=True)
