@@ -20,6 +20,8 @@ def main() -> None:
 
     build_parser = subparsers.add_parser("build", help="Build inverted index")
 
+    tokenize_term = subparsers.add_parser("tf", help="Tokenize term")
+
     args = parser.parse_args()
 
     movies = load_movies(Path("data/movies.json"))
@@ -53,6 +55,8 @@ def main() -> None:
         case "build":
             indexer.build(movies)
             indexer.save()
+        case "tf":
+            pass
         case _:
             parser.print_help()
 

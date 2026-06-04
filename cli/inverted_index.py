@@ -1,4 +1,5 @@
 import pickle
+from collections import Counter
 from pathlib import Path
 
 from nltk import defaultdict
@@ -16,13 +17,21 @@ class InvertedIndex:
     ) -> None:
         self.index: dict[Token, set[DocumentID]] = defaultdict(set)
         self.docmap: dict[DocumentID, dict] = {}
+        self.term_frequencies: dict[DocumentID, Counter] = defaultdict(Counter)
         self.tokenizer = tokenizer
         self._cache_dir = Path("cache")
 
     def __add_document(self, doc_id: DocumentID, text: str) -> None:
         tokens = self.tokenizer.preprocess(text)
+        self.term_frequencies[doc_id].update(tokens)
         for token in tokens:
             self.index[token].add(doc_id)
+
+    def __tokenize_term(self, term: str) -> Token:
+        token = self.tokenizer.preprocess(term)
+        if len(token) > 1:
+            raise ValueError(f"Expected 1 token, found {len(token)}")
+        return token[0]
 
     def get_documents(self, term: Token) -> list[DocumentID]:
         return sorted(self.index.get(term, []))
@@ -45,3 +54,9 @@ class InvertedIndex:
 
         with open(self._cache_dir.joinpath("docmap.pkl"), "rb") as f:
             self.docmap = pickle.load(f)
+
+        with open(self._cache_dir.joinpath("term_frequencies.pkl"), "rb") as f:
+            self.docmap = pickle.load(f)
+
+    def get_tf(self, doc_id: DocumentID, term: Token) -> int:
+        return self.term_frequencies[doc_id][term]
