@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -20,9 +21,12 @@ def main() -> None:
 
     build_parser = subparsers.add_parser("build", help="Build inverted index")
 
-    tokenize_term = subparsers.add_parser("tf", help="Tokenize term")
-    tokenize_term.add_argument("doc_id", type=int, help="Document ID")
-    tokenize_term.add_argument("term", type=str, help="Frequency term")
+    term_frequency = subparsers.add_parser("tf", help="Term Frequency")
+    term_frequency.add_argument("doc_id", type=int, help="Document ID")
+    term_frequency.add_argument("term", type=str, help="Frequency term")
+
+    idf = subparsers.add_parser("idf", help="Inverse Document Frequency")
+    idf.add_argument("term", type=str, help="IDF Term")
 
     args = parser.parse_args()
 
@@ -66,7 +70,16 @@ def main() -> None:
             except KeyError as e:
                 print(f"Could not find term: {e}")
                 print(0)
-
+        case "idf":
+            indexer.load()
+            term = tokenize_single_term(args.term)
+            total_doc_count = len(indexer.docmap)
+            term_match_doc_count = 0
+            for doc in indexer.docmap:
+                tf = indexer.get_tf(doc, term)
+                term_match_doc_count += 1 if tf > 0 else 0
+            idf = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
+            print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
         case _:
             parser.print_help()
 
