@@ -27,12 +27,6 @@ class InvertedIndex:
         for token in tokens:
             self.index[token].add(doc_id)
 
-    def __tokenize_term(self, term: str) -> Token:
-        token = self.tokenizer.preprocess(term)
-        if len(token) > 1:
-            raise ValueError(f"Expected 1 token, found {len(token)}")
-        return token[0]
-
     def get_documents(self, term: Token) -> list[DocumentID]:
         return sorted(self.index.get(term, []))
 
@@ -44,7 +38,11 @@ class InvertedIndex:
     def save(self) -> None:
         self._cache_dir.mkdir(parents=True, exist_ok=True)
 
-        for filename, obj in [("index.pkl", self.index), ("docmap.pkl", self.docmap)]:
+        for filename, obj in [
+            ("index.pkl", self.index),
+            ("docmap.pkl", self.docmap),
+            ("term_frequencies.pkl", self.term_frequencies),
+        ]:
             with open(self._cache_dir.joinpath(filename), "wb") as f:
                 pickle.dump(obj, f)
 
@@ -56,7 +54,7 @@ class InvertedIndex:
             self.docmap = pickle.load(f)
 
         with open(self._cache_dir.joinpath("term_frequencies.pkl"), "rb") as f:
-            self.docmap = pickle.load(f)
+            self.term_frequencies = pickle.load(f)
 
     def get_tf(self, doc_id: DocumentID, term: Token) -> int:
         return self.term_frequencies[doc_id][term]
