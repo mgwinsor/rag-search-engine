@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import math
 import sys
 from pathlib import Path
 
@@ -27,6 +26,10 @@ def main() -> None:
 
     idf = subparsers.add_parser("idf", help="Inverse Document Frequency")
     idf.add_argument("term", type=str, help="IDF Term")
+
+    tfidf = subparsers.add_parser("tfidf", help="Calculate TF-IDF")
+    tfidf.add_argument("doc_id", type=int, help="Document ID")
+    tfidf.add_argument("term", type=str, help="Term to calculate TF-IDF")
 
     args = parser.parse_args()
 
@@ -63,23 +66,18 @@ def main() -> None:
             indexer.save()
         case "tf":
             indexer.load()
-            term = tokenize_single_term(args.term)
-            try:
-                freq = indexer.get_tf(args.doc_id, term)
-                print(f"Frequency for {term} in document {args.doc_id}: {freq}")
-            except KeyError as e:
-                print(f"Could not find term: {e}")
-                print(0)
+            tf = indexer.get_tf(args.doc_id, tokenize_single_term(args.term))
+            print(f"Frequency for {args.term} in document {args.doc_id}: {tf}")
         case "idf":
             indexer.load()
-            term = tokenize_single_term(args.term)
-            total_doc_count = len(indexer.docmap)
-            term_match_doc_count = 0
-            for doc in indexer.docmap:
-                tf = indexer.get_tf(doc, term)
-                term_match_doc_count += 1 if tf > 0 else 0
-            idf = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
+            idf = indexer.get_idf(tokenize_single_term(args.term))
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
+        case "tfidf":
+            indexer.load()
+            tf_idf = indexer.get_tf_idf(args.doc_id, tokenize_single_term(args.term))
+            print(
+                f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}"
+            )
         case _:
             parser.print_help()
 

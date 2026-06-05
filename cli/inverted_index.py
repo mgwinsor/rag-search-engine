@@ -1,3 +1,4 @@
+import math
 import pickle
 from collections import Counter
 from pathlib import Path
@@ -58,3 +59,13 @@ class InvertedIndex:
 
     def get_tf(self, doc_id: DocumentID, term: Token) -> int:
         return self.term_frequencies[doc_id][term]
+
+    def get_idf(self, term: Token) -> float:
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[term])
+        return math.log((doc_count + 1) / (term_doc_count + 1))
+
+    def get_tf_idf(self, doc_id: DocumentID, term: Token) -> float:
+        tf = self.get_tf(doc_id, term)
+        idf = self.get_idf(term)
+        return tf * idf
