@@ -11,6 +11,9 @@ type Token = str
 type DocumentID = int
 
 
+BM25_K1 = 1.5
+
+
 class InvertedIndex:
     def __init__(
         self,
@@ -74,3 +77,7 @@ class InvertedIndex:
         doc_count = len(self.docmap)
         term_doc_count = len(self.index[term])
         return math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
+
+    def get_bm25_tf(self, doc_id: DocumentID, term: Token, k1=BM25_K1) -> float:
+        tf = self.get_tf(doc_id, term)
+        return (tf * (k1 + 1)) / (tf + k1)

@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from cli.inverted_index import InvertedIndex, Token
+from cli.inverted_index import BM25_K1, InvertedIndex, Token
 from cli.text_processor import TextProcessor
 
 
@@ -35,6 +35,13 @@ def main() -> None:
         "bm25idf", help="Get BM25 IDF score for a given term"
     )
     bm25idf.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+
+    bm25tf = subparsers.add_parser("bm25tf", help="Get BM25 TF score for a given term")
+    bm25tf.add_argument("doc_id", type=int, help="Document ID")
+    bm25tf.add_argument("term", type=str, help="Term to get BM25 TF score for")
+    bm25tf.add_argument(
+        "k1", type=float, nargs="?", default=BM25_K1, help="Tunable BM25 K1 parameter"
+    )
 
     args = parser.parse_args()
 
@@ -87,6 +94,17 @@ def main() -> None:
             indexer.load()
             bm25idf = indexer.get_bm25_idf(tokenize_single_term(args.term))
             print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
+        case "bm25tf":
+            indexer.load()
+            k1 = BM25_K1
+            if args.k1:
+                k1 = args.k1
+            bm25tf = indexer.get_bm25_tf(
+                args.doc_id, tokenize_single_term(args.term), k1
+            )
+            print(
+                f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}"
+            )
         case _:
             parser.print_help()
 
