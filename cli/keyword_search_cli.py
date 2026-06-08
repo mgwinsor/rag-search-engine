@@ -31,6 +31,11 @@ def main() -> None:
     tfidf.add_argument("doc_id", type=int, help="Document ID")
     tfidf.add_argument("term", type=str, help="Term to calculate TF-IDF")
 
+    bm25idf = subparsers.add_parser(
+        "bm25idf", help="Get BM25 IDF score for a given term"
+    )
+    bm25idf.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+
     args = parser.parse_args()
 
     movies = load_movies(Path("data/movies.json"))
@@ -78,6 +83,10 @@ def main() -> None:
             print(
                 f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}"
             )
+        case "bm25idf":
+            indexer.load()
+            bm25idf = indexer.get_bm25_idf(tokenize_single_term(args.term))
+            print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
         case _:
             parser.print_help()
 

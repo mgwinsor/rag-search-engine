@@ -69,3 +69,8 @@ class InvertedIndex:
         tf = self.get_tf(doc_id, term)
         idf = self.get_idf(term)
         return tf * idf
+
+    def get_bm25_idf(self, term: Token) -> float:
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[term])
+        return math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
