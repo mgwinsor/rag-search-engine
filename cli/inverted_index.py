@@ -31,7 +31,7 @@ class InvertedIndex:
         tokens = self.tokenizer.preprocess(text)
         self.term_frequencies[doc_id].update(tokens)
         self.doc_lengths[doc_id] = len(tokens)
-        for token in tokens:
+        for token in set(tokens):
             self.index[token].add(doc_id)
 
     def __get_avg_doc_length(self) -> float:
@@ -85,7 +85,7 @@ class InvertedIndex:
 
     def get_bm25_idf(self, term: Token) -> float:
         doc_count = len(self.docmap)
-        term_doc_count = len(self.index[term])
+        term_doc_count = len(self.index.get(term, set()))
         return math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
 
     def get_bm25_tf(
@@ -95,4 +95,18 @@ class InvertedIndex:
         doc_length = self.doc_lengths.get(doc_id, 0)
         avg_doc_length = self.__get_avg_doc_length()
         doc_normalization = 1 - b + b * (doc_length / avg_doc_length)
-        return (tf * (k1 + 1)) / (tf + k1 * doc_normalization)
+        result = (tf * (k1 + 1)) / (tf + k1 * doc_normalization)
+        return result
+
+    def bm25(self, doc_id: DocumentID, term: Token) -> float:
+        return self.get_bm25_idf(term) * self.get_bm25_tf(doc_id, term)
+
+    def bm25_search(self, query: str, limit: int) -> list[tuple[DocumentID, float]]:
+        tokens = self.tokenizer.preprocess(query)
+        scores: dict[DocumentID, float] = {}
+        for doc_id in self.docmap:
+            bm25_score = 0
+            for token in tokens:
+                bm25_score += self.bm25(doc_id, token)
+            scores[doc_id] = bm25_score
+        return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:limit]

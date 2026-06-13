@@ -46,11 +46,16 @@ def main() -> None:
         "b", type=float, nargs="?", default=BM25_B, help="Tunable BM25 b parameter"
     )
 
+    bm25search = subparsers.add_parser(
+        "bm25search", help="Search movies using full BM25 scoring"
+    )
+    bm25search.add_argument("query", type=str, help="Search query")
+
     args = parser.parse_args()
 
     movies = load_movies(Path("data/movies.json"))
-    stopwords = load_stopwords(Path("data/stopwords.txt"))
-    text_processor = TextProcessor(stopwords)
+    raw_stopwords = set(Path("data/stopwords.txt").read_text().splitlines())
+    text_processor = TextProcessor(raw_stopwords)
     indexer = InvertedIndex(text_processor)
 
     match args.command:
@@ -111,6 +116,12 @@ def main() -> None:
             print(
                 f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}"
             )
+        case "bm25search":
+            indexer.load()
+            bm25_search = indexer.bm25_search(args.query, 5)
+            for rank, (doc_id, score) in enumerate(bm25_search, start=1):
+                title = indexer.docmap[doc_id]["title"]
+                print(f"{rank}. ({doc_id}) {title} - Score: {score:.2f}")
         case _:
             parser.print_help()
 
@@ -120,13 +131,9 @@ def load_movies(path: Path) -> list[dict]:
     return data["movies"]
 
 
-def load_stopwords(path: Path) -> set[str]:
-    return set(path.read_text().splitlines())
-
-
 def tokenize_single_term(term: str) -> Token:
-    stopwords = load_stopwords(Path("data/stopwords.txt"))
-    text_processor = TextProcessor(stopwords)
+    raw_stopwords = set(Path("data/stopwords.txt").read_text().splitlines())
+    text_processor = TextProcessor(raw_stopwords)
     token = text_processor.preprocess(term)
     if len(token) != 1:
         raise ValueError(f"Expected 1 token, found {len(token)}")
