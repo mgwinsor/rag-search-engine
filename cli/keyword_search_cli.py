@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from cli.inverted_index import BM25_K1, InvertedIndex, Token
+from cli.inverted_index import BM25_B, BM25_K1, InvertedIndex, Token
 from cli.text_processor import TextProcessor
 
 
@@ -18,7 +18,7 @@ def main() -> None:
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
 
-    build_parser = subparsers.add_parser("build", help="Build inverted index")
+    _ = subparsers.add_parser("build", help="Build inverted index")
 
     term_frequency = subparsers.add_parser("tf", help="Term Frequency")
     term_frequency.add_argument("doc_id", type=int, help="Document ID")
@@ -41,6 +41,9 @@ def main() -> None:
     bm25tf.add_argument("term", type=str, help="Term to get BM25 TF score for")
     bm25tf.add_argument(
         "k1", type=float, nargs="?", default=BM25_K1, help="Tunable BM25 K1 parameter"
+    )
+    bm25tf.add_argument(
+        "b", type=float, nargs="?", default=BM25_B, help="Tunable BM25 b parameter"
     )
 
     args = parser.parse_args()
@@ -97,10 +100,13 @@ def main() -> None:
         case "bm25tf":
             indexer.load()
             k1 = BM25_K1
+            b = BM25_B
             if args.k1:
                 k1 = args.k1
+            if args.b:
+                b = args.b
             bm25tf = indexer.get_bm25_tf(
-                args.doc_id, tokenize_single_term(args.term), k1
+                args.doc_id, tokenize_single_term(args.term), k1, b
             )
             print(
                 f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}"
